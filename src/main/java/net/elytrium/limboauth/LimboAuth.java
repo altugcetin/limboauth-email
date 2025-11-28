@@ -124,7 +124,7 @@ import org.slf4j.Logger;
     version = BuildConstants.AUTH_VERSION,
     url = "https://github.com/altugcetin/limboauth-email",
     authors = {
-        "AstroAlchemist Blocksmiths",
+        "AstroAlchemist (Blocksmiths)",
         "Elytrium (Original)"
     },
     description = "LimboAuth with mandatory email registration and advanced filtering",
