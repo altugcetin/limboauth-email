@@ -34,6 +34,7 @@ import java.text.MessageFormat;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import net.elytrium.commons.kyori.serialization.Serializer;
@@ -58,6 +59,7 @@ public class AuthSessionHandler implements LimboSessionHandler {
   public static final CodeVerifier TOTP_CODE_VERIFIER = new DefaultCodeVerifier(new DefaultCodeGenerator(), new SystemTimeProvider());
   private static final BCrypt.Verifyer HASH_VERIFIER = BCrypt.verifyer();
   private static final BCrypt.Hasher HASHER = BCrypt.withDefaults();
+  private static Pattern emailPattern;
 
   private static Component ratelimited;
   private static BossBar.Color bossbarColor;
@@ -84,6 +86,7 @@ public class AuthSessionHandler implements LimboSessionHandler {
   private static Component registerPasswordTooLong;
   private static Component registerPasswordTooShort;
   private static Component registerPasswordUnsafe;
+  private static Component registerEmailInvalid;
   private static Component loginSuccessful;
   private static Component sessionExpired;
   @Nullable
@@ -199,7 +202,7 @@ public class AuthSessionHandler implements LimboSessionHandler {
       return;
     }
 
-    if (!LimboAuth.RATELIMITER.attempt(this.proxyPlayer.getRemoteAddress().getAddress())) {
+    if (!LimboAuth.checkRateLimit(this.proxyPlayer.getRemoteAddress().getAddress())) {
       this.proxyPlayer.sendMessage(AuthSessionHandler.ratelimited);
       return;
     }
@@ -209,9 +212,12 @@ public class AuthSessionHandler implements LimboSessionHandler {
       Command command = Command.parse(args[0]);
       if (command == Command.REGISTER && !this.totpState && this.playerInfo == null) {
         String password = args[1];
-        if (this.checkPasswordsRepeat(args) && this.checkPasswordLength(password) && this.checkPasswordStrength(password)) {
+        String email = args[2];
+        if (this.checkPasswordLength(password) && this.checkPasswordStrength(password) && this.checkEmailFormat(email)) {
           this.saveTempPassword(password);
-          RegisteredPlayer registeredPlayer = new RegisteredPlayer(this.proxyPlayer).setPassword(password);
+          RegisteredPlayer registeredPlayer = new RegisteredPlayer(this.proxyPlayer)
+              .setPassword(password)
+              .setEmail(email);
 
           try {
             this.playerDao.create(registeredPlayer);
@@ -232,7 +238,7 @@ public class AuthSessionHandler implements LimboSessionHandler {
         }
 
         // {@code return} placed here (not above), because
-        // AuthSessionHandler#checkPasswordsRepeat, AuthSessionHandler#checkPasswordLength, and AuthSessionHandler#checkPasswordStrength methods are
+        // AuthSessionHandler#checkPasswordLength, AuthSessionHandler#checkPasswordStrength, and AuthSessionHandler#checkEmailFormat methods are
         // invoking Player#sendMessage that sends its own message in case if the return value is false.
         // If we don't place {@code return} here, an another message (AuthSessionHandler#sendMessage) will be sent.
         return;
@@ -366,18 +372,26 @@ public class AuthSessionHandler implements LimboSessionHandler {
   }
 
   private boolean checkArgsLength(int argsLength) {
-    if (this.playerInfo == null && Settings.IMP.MAIN.REGISTER_NEED_REPEAT_PASSWORD) {
+    if (this.playerInfo == null) {
+      // Registration requires: /register <password> <email>
       return argsLength == 3;
     } else {
+      // Login requires: /login <password>
       return argsLength == 2;
     }
   }
 
   private boolean checkPasswordsRepeat(String[] args) {
-    if (!Settings.IMP.MAIN.REGISTER_NEED_REPEAT_PASSWORD || args[1].equals(args[2])) {
+    // This method is kept for backwards compatibility but no longer used
+    // since we replaced repeat password with email
+    return true;
+  }
+
+  private boolean checkEmailFormat(String email) {
+    if (emailPattern.matcher(email).matches()) {
       return true;
     } else {
-      this.proxyPlayer.sendMessage(registerDifferentPasswords);
+      this.proxyPlayer.sendMessage(registerEmailInvalid);
       return false;
     }
   }
@@ -507,6 +521,8 @@ public class AuthSessionHandler implements LimboSessionHandler {
     registerPasswordTooLong = serializer.deserialize(Settings.IMP.MAIN.STRINGS.REGISTER_PASSWORD_TOO_LONG);
     registerPasswordTooShort = serializer.deserialize(Settings.IMP.MAIN.STRINGS.REGISTER_PASSWORD_TOO_SHORT);
     registerPasswordUnsafe = serializer.deserialize(Settings.IMP.MAIN.STRINGS.REGISTER_PASSWORD_UNSAFE);
+    registerEmailInvalid = serializer.deserialize(Settings.IMP.MAIN.STRINGS.REGISTER_EMAIL_INVALID);
+    emailPattern = Pattern.compile(Settings.IMP.MAIN.EMAIL_REGEX);
     loginSuccessful = serializer.deserialize(Settings.IMP.MAIN.STRINGS.LOGIN_SUCCESSFUL);
     sessionExpired = serializer.deserialize(Settings.IMP.MAIN.STRINGS.MOD_SESSION_EXPIRED);
     if (Settings.IMP.MAIN.STRINGS.LOGIN_SUCCESSFUL_TITLE.isEmpty() && Settings.IMP.MAIN.STRINGS.LOGIN_SUCCESSFUL_SUBTITLE.isEmpty()) {

@@ -63,7 +63,7 @@ public class RegisteredPlayer {
   private String nickname;
 
   @DatabaseField(defaultValue = "your@email.com", canBeNull = false, columnName = EMAIL_FIELD)
-  private String email;
+  private String email = "";
 
   @DatabaseField(canBeNull = false, columnName = HASH_FIELD)
   private String hash = "";
@@ -260,6 +260,16 @@ public class RegisteredPlayer {
 
   public RegisteredPlayer setTokenIssuedAt(Long tokenIssuedAt) {
     this.tokenIssuedAt = tokenIssuedAt;
+
+    return this;
+  }
+
+  public String getEmail() {
+    return this.email == null ? "" : this.email;
+  }
+
+  public RegisteredPlayer setEmail(String email) {
+    this.email = email;
 
     return this;
   }

@@ -153,6 +153,9 @@ public class Settings extends YamlConfig {
     })
     public String ALLOWED_NICKNAME_REGEX = "^[A-Za-z0-9_]{3,16}$";
 
+    @Comment("Regex pattern for email validation")
+    public String EMAIL_REGEX = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
+
     public boolean LOAD_WORLD = false;
     @Comment({
         "World file type:",
@@ -396,17 +399,18 @@ public class Settings extends YamlConfig {
       @Comment(value = "Can be empty.", at = Comment.At.SAME_LINE)
       public String LOGIN_SUCCESSFUL_SUBTITLE = "&aSuccessfully logged in!";
 
-      @Comment("Or if register-need-repeat-password set to false remove the \"<repeat password>\" part.")
-      public String REGISTER = "{PRFX} Please, register using &6/register <password> <repeat password>";
+      @Comment("Registration command format: /register <password> <email>")
+      public String REGISTER = "{PRFX} Please, register using &6/register <password> <email>";
       public String REGISTER_DIFFERENT_PASSWORDS = "{PRFX} &cThe entered passwords differ from each other!";
       public String REGISTER_PASSWORD_TOO_SHORT = "{PRFX} &cYou entered too short password, use a different one!";
       public String REGISTER_PASSWORD_TOO_LONG = "{PRFX} &cYou entered too long password, use a different one!";
       public String REGISTER_PASSWORD_UNSAFE = "{PRFX} &cYour password is unsafe, use a different one!";
+      public String REGISTER_EMAIL_INVALID = "{PRFX} &cPlease enter a valid email address!";
       public String REGISTER_SUCCESSFUL = "{PRFX} &aSuccessfully registered!";
       @Comment(value = "Can be empty.", at = Comment.At.SAME_LINE)
       public String REGISTER_TITLE = "{PRFX}";
       @Comment(value = "Can be empty.", at = Comment.At.SAME_LINE)
-      public String REGISTER_SUBTITLE = "&aPlease, register using &6/register <password> <repeat password>";
+      public String REGISTER_SUBTITLE = "&aPlease, register using &6/register <password> <email>";
       @Comment(value = "Can be empty.", at = Comment.At.SAME_LINE)
       public String REGISTER_SUCCESSFUL_TITLE = "{PRFX}";
       @Comment(value = "Can be empty.", at = Comment.At.SAME_LINE)
@@ -439,7 +443,7 @@ public class Settings extends YamlConfig {
       public String FORCE_CHANGE_PASSWORD_NOT_REGISTERED = "{PRFX} &cPlayer &6{0}&c is not registered.";
       public String FORCE_CHANGE_PASSWORD_USAGE = "{PRFX} Usage: &6/forcechangepassword <nickname> <new password>";
 
-      public String FORCE_REGISTER_USAGE = "{PRFX} Usage: &6/forceregister <nickname> <password>";
+      public String FORCE_REGISTER_USAGE = "{PRFX} Usage: &6/forceregister <nickname> <password> <email>";
       public String FORCE_REGISTER_INCORRECT_NICKNAME = "{PRFX} &cNickname contains forbidden characters.";
       public String FORCE_REGISTER_TAKEN_NICKNAME = "{PRFX} &cThis nickname is already taken.";
       public String FORCE_REGISTER_SUCCESSFUL = "{PRFX} &aSuccessfully registered player &6{0}&a!";

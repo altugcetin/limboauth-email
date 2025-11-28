@@ -23,6 +23,7 @@ import com.velocitypowered.api.command.SimpleCommand;
 import java.sql.SQLException;
 import java.text.MessageFormat;
 import java.util.Locale;
+import java.util.regex.Pattern;
 import net.elytrium.commons.kyori.serialization.Serializer;
 import net.elytrium.limboauth.LimboAuth;
 import net.elytrium.limboauth.Settings;
@@ -40,6 +41,8 @@ public class ForceRegisterCommand extends RatelimitedCommand {
   private final Component usage;
   private final Component takenNickname;
   private final Component incorrectNickname;
+  private final Component invalidEmail;
+  private final Pattern emailPattern;
 
   public ForceRegisterCommand(LimboAuth plugin, Dao<RegisteredPlayer, String> playerDao) {
     this.plugin = plugin;
@@ -50,18 +53,26 @@ public class ForceRegisterCommand extends RatelimitedCommand {
     this.usage = LimboAuth.getSerializer().deserialize(Settings.IMP.MAIN.STRINGS.FORCE_REGISTER_USAGE);
     this.takenNickname = LimboAuth.getSerializer().deserialize(Settings.IMP.MAIN.STRINGS.FORCE_REGISTER_TAKEN_NICKNAME);
     this.incorrectNickname = LimboAuth.getSerializer().deserialize(Settings.IMP.MAIN.STRINGS.FORCE_REGISTER_INCORRECT_NICKNAME);
+    this.invalidEmail = LimboAuth.getSerializer().deserialize(Settings.IMP.MAIN.STRINGS.REGISTER_EMAIL_INVALID);
+    this.emailPattern = Pattern.compile(Settings.IMP.MAIN.EMAIL_REGEX);
   }
 
   @Override
   public void execute(CommandSource source, String[] args) {
-    if (args.length == 2) {
+    if (args.length == 3) {
       String nickname = args[0];
       String password = args[1];
+      String email = args[2];
 
       Serializer serializer = LimboAuth.getSerializer();
       try {
         if (!this.plugin.getNicknameValidationPattern().matcher(nickname).matches()) {
           source.sendMessage(this.incorrectNickname);
+          return;
+        }
+
+        if (!this.emailPattern.matcher(email).matches()) {
+          source.sendMessage(this.invalidEmail);
           return;
         }
 
@@ -71,7 +82,9 @@ public class ForceRegisterCommand extends RatelimitedCommand {
           return;
         }
 
-        RegisteredPlayer player = new RegisteredPlayer(nickname, "", "").setPassword(password);
+        RegisteredPlayer player = new RegisteredPlayer(nickname, "", "")
+            .setPassword(password)
+            .setEmail(email);
         this.playerDao.create(player);
 
         source.sendMessage(serializer.deserialize(MessageFormat.format(this.successful, nickname)));
