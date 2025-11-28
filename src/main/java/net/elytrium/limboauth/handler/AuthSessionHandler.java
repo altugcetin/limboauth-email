@@ -92,6 +92,7 @@ public class AuthSessionHandler implements LimboSessionHandler {
   private static Component registerEmailPlusNotAllowed;
   private static Component registerEmailTooShort;
   private static Component registerEmailLooksRandom;
+  private static Component registerEmailAlreadyUsed;
   private static Component loginSuccessful;
   private static Component sessionExpired;
   @Nullable
@@ -447,6 +448,17 @@ public class AuthSessionHandler implements LimboSessionHandler {
       }
     }
 
+    // Check if email is already used by another account
+    try {
+      List<RegisteredPlayer> existingPlayers = this.playerDao.queryForEq(RegisteredPlayer.EMAIL_FIELD, email.toLowerCase());
+      if (existingPlayers != null && !existingPlayers.isEmpty()) {
+        this.proxyPlayer.sendMessage(registerEmailAlreadyUsed);
+        return false;
+      }
+    } catch (SQLException e) {
+      throw new SQLRuntimeException(e);
+    }
+
     return true;
   }
 
@@ -644,6 +656,7 @@ public class AuthSessionHandler implements LimboSessionHandler {
     registerEmailPlusNotAllowed = serializer.deserialize(Settings.IMP.MAIN.STRINGS.REGISTER_EMAIL_PLUS_NOT_ALLOWED);
     registerEmailTooShort = serializer.deserialize(Settings.IMP.MAIN.STRINGS.REGISTER_EMAIL_TOO_SHORT);
     registerEmailLooksRandom = serializer.deserialize(Settings.IMP.MAIN.STRINGS.REGISTER_EMAIL_LOOKS_RANDOM);
+    registerEmailAlreadyUsed = serializer.deserialize(Settings.IMP.MAIN.STRINGS.REGISTER_EMAIL_ALREADY_USED);
     emailPattern = Pattern.compile(Settings.IMP.MAIN.EMAIL_REGEX);
     loginSuccessful = serializer.deserialize(Settings.IMP.MAIN.STRINGS.LOGIN_SUCCESSFUL);
     sessionExpired = serializer.deserialize(Settings.IMP.MAIN.STRINGS.MOD_SESSION_EXPIRED);

@@ -22,6 +22,7 @@ import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.command.SimpleCommand;
 import java.sql.SQLException;
 import java.text.MessageFormat;
+import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 import net.elytrium.commons.kyori.serialization.Serializer;
@@ -47,6 +48,7 @@ public class ForceRegisterCommand extends RatelimitedCommand {
   private final Component emailPlusNotAllowed;
   private final Component emailTooShort;
   private final Component emailLooksRandom;
+  private final Component emailAlreadyUsed;
   private final Pattern emailPattern;
 
   public ForceRegisterCommand(LimboAuth plugin, Dao<RegisteredPlayer, String> playerDao) {
@@ -64,6 +66,7 @@ public class ForceRegisterCommand extends RatelimitedCommand {
     this.emailPlusNotAllowed = LimboAuth.getSerializer().deserialize(Settings.IMP.MAIN.STRINGS.REGISTER_EMAIL_PLUS_NOT_ALLOWED);
     this.emailTooShort = LimboAuth.getSerializer().deserialize(Settings.IMP.MAIN.STRINGS.REGISTER_EMAIL_TOO_SHORT);
     this.emailLooksRandom = LimboAuth.getSerializer().deserialize(Settings.IMP.MAIN.STRINGS.REGISTER_EMAIL_LOOKS_RANDOM);
+    this.emailAlreadyUsed = LimboAuth.getSerializer().deserialize(Settings.IMP.MAIN.STRINGS.REGISTER_EMAIL_ALREADY_USED);
     this.emailPattern = Pattern.compile(Settings.IMP.MAIN.EMAIL_REGEX);
   }
 
@@ -113,6 +116,13 @@ public class ForceRegisterCommand extends RatelimitedCommand {
         // Check for random-looking emails
         if (Settings.IMP.MAIN.BLOCK_RANDOM_EMAILS && looksLikeRandomEmail(normalizedLocalPart)) {
           source.sendMessage(this.emailLooksRandom);
+          return;
+        }
+
+        // Check if email is already used
+        List<RegisteredPlayer> existingPlayers = this.playerDao.queryForEq(RegisteredPlayer.EMAIL_FIELD, email.toLowerCase());
+        if (existingPlayers != null && !existingPlayers.isEmpty()) {
+          source.sendMessage(this.emailAlreadyUsed);
           return;
         }
 

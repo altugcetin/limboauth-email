@@ -459,6 +459,7 @@ public class Settings extends YamlConfig {
       public String REGISTER_EMAIL_PLUS_NOT_ALLOWED = "{PRFX} &cEmail addresses with '+' are not allowed!";
       public String REGISTER_EMAIL_TOO_SHORT = "{PRFX} &cEmail address is too short!";
       public String REGISTER_EMAIL_LOOKS_RANDOM = "{PRFX} &cThis email looks like a random/fake address. Please use your real email!";
+      public String REGISTER_EMAIL_ALREADY_USED = "{PRFX} &cThis email is already registered to another account!";
       public String REGISTER_SUCCESSFUL = "{PRFX} &aSuccessfully registered!";
       @Comment(value = "Can be empty.", at = Comment.At.SAME_LINE)
       public String REGISTER_TITLE = "{PRFX}";
