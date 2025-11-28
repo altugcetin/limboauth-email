@@ -120,12 +120,14 @@ import org.slf4j.Logger;
 
 @Plugin(
     id = "limboauth",
-    name = "LimboAuth",
+    name = "LimboAuth-Email",
     version = BuildConstants.AUTH_VERSION,
-    url = "https://elytrium.net/",
+    url = "https://github.com/altugcetin/limboauth-email",
     authors = {
-        "Elytrium (https://elytrium.net/)",
+        "AstroAlchemist Blocksmiths",
+        "Elytrium (Original)"
     },
+    description = "LimboAuth with mandatory email registration and advanced filtering",
     dependencies = {
         @Dependency(id = "limboapi"),
         @Dependency(id = "floodgate", optional = true)
@@ -206,6 +208,17 @@ public class LimboAuth {
   @Subscribe
   public void onProxyInitialization(ProxyInitializeEvent event) {
     System.setProperty("com.j256.simplelogging.level", "ERROR");
+
+    // Startup Banner
+    LOGGER.info("");
+    LOGGER.info("  ╦  ╦╔╦╗╔╗ ╔═╗╔═╗╦ ╦╔╦╗╦ ╦  ╔═╗╔╦╗╔═╗╦╦  ");
+    LOGGER.info("  ║  ║║║║╠╩╗║ ║╠═╣║ ║ ║ ╠═╣  ║╣ ║║║╠═╣║║  ");
+    LOGGER.info("  ╩═╝╩╩ ╩╚═╝╚═╝╩ ╩╚═╝ ╩ ╩ ╩  ╚═╝╩ ╩╩ ╩╩╩═╝");
+    LOGGER.info("");
+    LOGGER.info("  limboauth-email by AstroAlchemist Blocksmiths");
+    LOGGER.info("  Version: " + BuildConstants.AUTH_VERSION);
+    LOGGER.info("  GitHub: https://github.com/altugcetin/limboauth-email");
+    LOGGER.info("");
 
     try {
       this.reload();
