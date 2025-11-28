@@ -89,6 +89,9 @@ public class AuthSessionHandler implements LimboSessionHandler {
   private static Component registerEmailInvalid;
   private static Component registerEmailDomainBlocked;
   private static Component registerEmailDomainNotAllowed;
+  private static Component registerEmailPlusNotAllowed;
+  private static Component registerEmailTooShort;
+  private static Component registerEmailLooksRandom;
   private static Component loginSuccessful;
   private static Component sessionExpired;
   @Nullable
@@ -396,8 +399,35 @@ public class AuthSessionHandler implements LimboSessionHandler {
       return false;
     }
 
-    // Extract domain from email
-    String domain = email.substring(email.indexOf('@') + 1).toLowerCase();
+    // Extract local part and domain
+    int atIndex = email.indexOf('@');
+    String localPart = email.substring(0, atIndex);
+    String domain = email.substring(atIndex + 1).toLowerCase();
+
+    // Block emails with '+' (Gmail alias trick)
+    if (Settings.IMP.MAIN.BLOCK_PLUS_EMAILS && localPart.contains("+")) {
+      this.proxyPlayer.sendMessage(registerEmailPlusNotAllowed);
+      return false;
+    }
+
+    // For Gmail, normalize and get the real local part (remove dots)
+    String normalizedLocalPart = localPart;
+    if (Settings.IMP.MAIN.NORMALIZE_GMAIL && 
+        (domain.equals("gmail.com") || domain.equals("googlemail.com"))) {
+      normalizedLocalPart = localPart.replace(".", "");
+    }
+
+    // Check minimum local part length
+    if (normalizedLocalPart.length() < Settings.IMP.MAIN.MIN_EMAIL_LOCAL_LENGTH) {
+      this.proxyPlayer.sendMessage(registerEmailTooShort);
+      return false;
+    }
+
+    // Check if email looks like a random string
+    if (Settings.IMP.MAIN.BLOCK_RANDOM_EMAILS && looksLikeRandomEmail(normalizedLocalPart)) {
+      this.proxyPlayer.sendMessage(registerEmailLooksRandom);
+      return false;
+    }
 
     // Check if whitelist mode is enabled
     if (!Settings.IMP.MAIN.ALLOWED_EMAIL_DOMAINS.isEmpty()) {
@@ -418,6 +448,69 @@ public class AuthSessionHandler implements LimboSessionHandler {
     }
 
     return true;
+  }
+
+  /**
+   * Detects if an email local part looks like a random string.
+   * Checks for:
+   * - Too many consecutive consonants (5+)
+   * - High ratio of consonants to vowels
+   * - All numbers or mostly numbers
+   * - Repeating patterns
+   */
+  private static boolean looksLikeRandomEmail(String localPart) {
+    String lower = localPart.toLowerCase();
+    
+    // Remove numbers for letter analysis
+    String lettersOnly = lower.replaceAll("[^a-z]", "");
+    
+    // If it's all numbers or very short letters, might be random
+    if (lettersOnly.length() < 2 && localPart.length() > 4) {
+      return true;
+    }
+    
+    if (lettersOnly.isEmpty()) {
+      return false; // Just numbers, might be valid
+    }
+
+    // Count vowels and consonants
+    int vowels = 0;
+    int consonants = 0;
+    int maxConsecutiveConsonants = 0;
+    int currentConsonants = 0;
+    
+    String vowelChars = "aeiou";
+    
+    for (char c : lettersOnly.toCharArray()) {
+      if (vowelChars.indexOf(c) >= 0) {
+        vowels++;
+        currentConsonants = 0;
+      } else {
+        consonants++;
+        currentConsonants++;
+        maxConsecutiveConsonants = Math.max(maxConsecutiveConsonants, currentConsonants);
+      }
+    }
+
+    // Too many consecutive consonants (like "xjkhsd")
+    if (maxConsecutiveConsonants >= 5) {
+      return true;
+    }
+
+    // Very high consonant to vowel ratio (random strings tend to have this)
+    if (lettersOnly.length() >= 6 && vowels > 0) {
+      double ratio = (double) consonants / vowels;
+      if (ratio > 4.0) {
+        return true;
+      }
+    }
+
+    // No vowels at all in a long string
+    if (vowels == 0 && lettersOnly.length() >= 5) {
+      return true;
+    }
+
+    return false;
   }
 
   private boolean checkPasswordLength(String password) {
@@ -548,6 +641,9 @@ public class AuthSessionHandler implements LimboSessionHandler {
     registerEmailInvalid = serializer.deserialize(Settings.IMP.MAIN.STRINGS.REGISTER_EMAIL_INVALID);
     registerEmailDomainBlocked = serializer.deserialize(Settings.IMP.MAIN.STRINGS.REGISTER_EMAIL_DOMAIN_BLOCKED);
     registerEmailDomainNotAllowed = serializer.deserialize(Settings.IMP.MAIN.STRINGS.REGISTER_EMAIL_DOMAIN_NOT_ALLOWED);
+    registerEmailPlusNotAllowed = serializer.deserialize(Settings.IMP.MAIN.STRINGS.REGISTER_EMAIL_PLUS_NOT_ALLOWED);
+    registerEmailTooShort = serializer.deserialize(Settings.IMP.MAIN.STRINGS.REGISTER_EMAIL_TOO_SHORT);
+    registerEmailLooksRandom = serializer.deserialize(Settings.IMP.MAIN.STRINGS.REGISTER_EMAIL_LOOKS_RANDOM);
     emailPattern = Pattern.compile(Settings.IMP.MAIN.EMAIL_REGEX);
     loginSuccessful = serializer.deserialize(Settings.IMP.MAIN.STRINGS.LOGIN_SUCCESSFUL);
     sessionExpired = serializer.deserialize(Settings.IMP.MAIN.STRINGS.MOD_SESSION_EXPIRED);

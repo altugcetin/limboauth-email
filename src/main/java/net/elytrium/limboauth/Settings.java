@@ -188,6 +188,22 @@ public class Settings extends YamlConfig {
     })
     public List<String> ALLOWED_EMAIL_DOMAINS = List.of();
 
+    @Comment("Block emails containing '+' (prevents Gmail alias trick like email+random@gmail.com)")
+    public boolean BLOCK_PLUS_EMAILS = true;
+
+    @Comment("Normalize Gmail addresses by removing dots (e.m.a.i.l@gmail.com = email@gmail.com)")
+    public boolean NORMALIZE_GMAIL = true;
+
+    @Comment("Minimum length for the local part of email (before @)")
+    public int MIN_EMAIL_LOCAL_LENGTH = 3;
+
+    @Comment({
+        "Block emails that look like random strings",
+        "Detects patterns like: asjkdhaskj@gmail.com, xyzabc123@gmail.com",
+        "Uses consonant clustering and entropy detection"
+    })
+    public boolean BLOCK_RANDOM_EMAILS = true;
+
     public boolean LOAD_WORLD = false;
     @Comment({
         "World file type:",
@@ -440,6 +456,9 @@ public class Settings extends YamlConfig {
       public String REGISTER_EMAIL_INVALID = "{PRFX} &cPlease enter a valid email address!";
       public String REGISTER_EMAIL_DOMAIN_BLOCKED = "{PRFX} &cThis email domain is not allowed! Please use a real email address.";
       public String REGISTER_EMAIL_DOMAIN_NOT_ALLOWED = "{PRFX} &cOnly emails from allowed domains are accepted!";
+      public String REGISTER_EMAIL_PLUS_NOT_ALLOWED = "{PRFX} &cEmail addresses with '+' are not allowed!";
+      public String REGISTER_EMAIL_TOO_SHORT = "{PRFX} &cEmail address is too short!";
+      public String REGISTER_EMAIL_LOOKS_RANDOM = "{PRFX} &cThis email looks like a random/fake address. Please use your real email!";
       public String REGISTER_SUCCESSFUL = "{PRFX} &aSuccessfully registered!";
       @Comment(value = "Can be empty.", at = Comment.At.SAME_LINE)
       public String REGISTER_TITLE = "{PRFX}";

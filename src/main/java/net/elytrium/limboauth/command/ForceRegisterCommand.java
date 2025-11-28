@@ -44,6 +44,9 @@ public class ForceRegisterCommand extends RatelimitedCommand {
   private final Component invalidEmail;
   private final Component emailDomainBlocked;
   private final Component emailDomainNotAllowed;
+  private final Component emailPlusNotAllowed;
+  private final Component emailTooShort;
+  private final Component emailLooksRandom;
   private final Pattern emailPattern;
 
   public ForceRegisterCommand(LimboAuth plugin, Dao<RegisteredPlayer, String> playerDao) {
@@ -58,6 +61,9 @@ public class ForceRegisterCommand extends RatelimitedCommand {
     this.invalidEmail = LimboAuth.getSerializer().deserialize(Settings.IMP.MAIN.STRINGS.REGISTER_EMAIL_INVALID);
     this.emailDomainBlocked = LimboAuth.getSerializer().deserialize(Settings.IMP.MAIN.STRINGS.REGISTER_EMAIL_DOMAIN_BLOCKED);
     this.emailDomainNotAllowed = LimboAuth.getSerializer().deserialize(Settings.IMP.MAIN.STRINGS.REGISTER_EMAIL_DOMAIN_NOT_ALLOWED);
+    this.emailPlusNotAllowed = LimboAuth.getSerializer().deserialize(Settings.IMP.MAIN.STRINGS.REGISTER_EMAIL_PLUS_NOT_ALLOWED);
+    this.emailTooShort = LimboAuth.getSerializer().deserialize(Settings.IMP.MAIN.STRINGS.REGISTER_EMAIL_TOO_SHORT);
+    this.emailLooksRandom = LimboAuth.getSerializer().deserialize(Settings.IMP.MAIN.STRINGS.REGISTER_EMAIL_LOOKS_RANDOM);
     this.emailPattern = Pattern.compile(Settings.IMP.MAIN.EMAIL_REGEX);
   }
 
@@ -80,8 +86,37 @@ public class ForceRegisterCommand extends RatelimitedCommand {
           return;
         }
 
+        // Extract local part and domain
+        int atIndex = email.indexOf('@');
+        String localPart = email.substring(0, atIndex);
+        String domain = email.substring(atIndex + 1).toLowerCase();
+
+        // Block emails with '+'
+        if (Settings.IMP.MAIN.BLOCK_PLUS_EMAILS && localPart.contains("+")) {
+          source.sendMessage(this.emailPlusNotAllowed);
+          return;
+        }
+
+        // Normalize Gmail addresses
+        String normalizedLocalPart = localPart;
+        if (Settings.IMP.MAIN.NORMALIZE_GMAIL && 
+            (domain.equals("gmail.com") || domain.equals("googlemail.com"))) {
+          normalizedLocalPart = localPart.replace(".", "");
+        }
+
+        // Check minimum length
+        if (normalizedLocalPart.length() < Settings.IMP.MAIN.MIN_EMAIL_LOCAL_LENGTH) {
+          source.sendMessage(this.emailTooShort);
+          return;
+        }
+
+        // Check for random-looking emails
+        if (Settings.IMP.MAIN.BLOCK_RANDOM_EMAILS && looksLikeRandomEmail(normalizedLocalPart)) {
+          source.sendMessage(this.emailLooksRandom);
+          return;
+        }
+
         // Check email domain
-        String domain = email.substring(email.indexOf('@') + 1).toLowerCase();
         if (!Settings.IMP.MAIN.ALLOWED_EMAIL_DOMAINS.isEmpty()) {
           boolean allowed = Settings.IMP.MAIN.ALLOWED_EMAIL_DOMAINS.stream()
               .anyMatch(allowedDomain -> domain.equalsIgnoreCase(allowedDomain));
@@ -123,5 +158,52 @@ public class ForceRegisterCommand extends RatelimitedCommand {
   public boolean hasPermission(SimpleCommand.Invocation invocation) {
     return Settings.IMP.MAIN.COMMAND_PERMISSION_STATE.FORCE_REGISTER
         .hasPermission(invocation.source(), "limboauth.admin.forceregister");
+  }
+
+  private static boolean looksLikeRandomEmail(String localPart) {
+    String lower = localPart.toLowerCase();
+    String lettersOnly = lower.replaceAll("[^a-z]", "");
+    
+    if (lettersOnly.length() < 2 && localPart.length() > 4) {
+      return true;
+    }
+    
+    if (lettersOnly.isEmpty()) {
+      return false;
+    }
+
+    int vowels = 0;
+    int consonants = 0;
+    int maxConsecutiveConsonants = 0;
+    int currentConsonants = 0;
+    String vowelChars = "aeiou";
+    
+    for (char c : lettersOnly.toCharArray()) {
+      if (vowelChars.indexOf(c) >= 0) {
+        vowels++;
+        currentConsonants = 0;
+      } else {
+        consonants++;
+        currentConsonants++;
+        maxConsecutiveConsonants = Math.max(maxConsecutiveConsonants, currentConsonants);
+      }
+    }
+
+    if (maxConsecutiveConsonants >= 5) {
+      return true;
+    }
+
+    if (lettersOnly.length() >= 6 && vowels > 0) {
+      double ratio = (double) consonants / vowels;
+      if (ratio > 4.0) {
+        return true;
+      }
+    }
+
+    if (vowels == 0 && lettersOnly.length() >= 5) {
+      return true;
+    }
+
+    return false;
   }
 }
