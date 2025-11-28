@@ -156,6 +156,38 @@ public class Settings extends YamlConfig {
     @Comment("Regex pattern for email validation")
     public String EMAIL_REGEX = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
 
+    @Comment({
+        "Blocked email domains (disposable/temporary email services)",
+        "Players cannot register with emails from these domains"
+    })
+    public List<String> BLOCKED_EMAIL_DOMAINS = List.of(
+        "tempmail.com", "temp-mail.org", "tempmail.net", "temp-mail.io",
+        "mailinator.com", "mailinator.net", "mailinator.org",
+        "guerrillamail.com", "guerrillamail.org", "guerrillamail.net", "guerrillamail.biz",
+        "10minutemail.com", "10minutemail.net", "10minmail.com",
+        "throwaway.email", "throwawaymail.com",
+        "fakeinbox.com", "fakemailgenerator.com",
+        "yopmail.com", "yopmail.fr", "yopmail.net",
+        "trashmail.com", "trashmail.net", "trashmail.org",
+        "getnada.com", "nada.email",
+        "dispostable.com", "disposablemail.com",
+        "maildrop.cc", "mailnesia.com",
+        "mohmal.com", "emailondeck.com",
+        "tempr.email", "discard.email",
+        "mailcatch.com", "mytrashmail.com",
+        "getairmail.com", "dropmail.me",
+        "instantemailaddress.com", "emailfake.com",
+        "crazymailing.com", "tempail.com",
+        "spamgourmet.com", "spam4.me"
+    );
+
+    @Comment({
+        "Allowed email domains (whitelist mode)",
+        "If not empty, ONLY emails from these domains will be accepted",
+        "Leave empty to disable whitelist mode and use blacklist only"
+    })
+    public List<String> ALLOWED_EMAIL_DOMAINS = List.of();
+
     public boolean LOAD_WORLD = false;
     @Comment({
         "World file type:",
@@ -406,6 +438,8 @@ public class Settings extends YamlConfig {
       public String REGISTER_PASSWORD_TOO_LONG = "{PRFX} &cYou entered too long password, use a different one!";
       public String REGISTER_PASSWORD_UNSAFE = "{PRFX} &cYour password is unsafe, use a different one!";
       public String REGISTER_EMAIL_INVALID = "{PRFX} &cPlease enter a valid email address!";
+      public String REGISTER_EMAIL_DOMAIN_BLOCKED = "{PRFX} &cThis email domain is not allowed! Please use a real email address.";
+      public String REGISTER_EMAIL_DOMAIN_NOT_ALLOWED = "{PRFX} &cOnly emails from allowed domains are accepted!";
       public String REGISTER_SUCCESSFUL = "{PRFX} &aSuccessfully registered!";
       @Comment(value = "Can be empty.", at = Comment.At.SAME_LINE)
       public String REGISTER_TITLE = "{PRFX}";

@@ -42,6 +42,8 @@ public class ForceRegisterCommand extends RatelimitedCommand {
   private final Component takenNickname;
   private final Component incorrectNickname;
   private final Component invalidEmail;
+  private final Component emailDomainBlocked;
+  private final Component emailDomainNotAllowed;
   private final Pattern emailPattern;
 
   public ForceRegisterCommand(LimboAuth plugin, Dao<RegisteredPlayer, String> playerDao) {
@@ -54,6 +56,8 @@ public class ForceRegisterCommand extends RatelimitedCommand {
     this.takenNickname = LimboAuth.getSerializer().deserialize(Settings.IMP.MAIN.STRINGS.FORCE_REGISTER_TAKEN_NICKNAME);
     this.incorrectNickname = LimboAuth.getSerializer().deserialize(Settings.IMP.MAIN.STRINGS.FORCE_REGISTER_INCORRECT_NICKNAME);
     this.invalidEmail = LimboAuth.getSerializer().deserialize(Settings.IMP.MAIN.STRINGS.REGISTER_EMAIL_INVALID);
+    this.emailDomainBlocked = LimboAuth.getSerializer().deserialize(Settings.IMP.MAIN.STRINGS.REGISTER_EMAIL_DOMAIN_BLOCKED);
+    this.emailDomainNotAllowed = LimboAuth.getSerializer().deserialize(Settings.IMP.MAIN.STRINGS.REGISTER_EMAIL_DOMAIN_NOT_ALLOWED);
     this.emailPattern = Pattern.compile(Settings.IMP.MAIN.EMAIL_REGEX);
   }
 
@@ -74,6 +78,24 @@ public class ForceRegisterCommand extends RatelimitedCommand {
         if (!this.emailPattern.matcher(email).matches()) {
           source.sendMessage(this.invalidEmail);
           return;
+        }
+
+        // Check email domain
+        String domain = email.substring(email.indexOf('@') + 1).toLowerCase();
+        if (!Settings.IMP.MAIN.ALLOWED_EMAIL_DOMAINS.isEmpty()) {
+          boolean allowed = Settings.IMP.MAIN.ALLOWED_EMAIL_DOMAINS.stream()
+              .anyMatch(allowedDomain -> domain.equalsIgnoreCase(allowedDomain));
+          if (!allowed) {
+            source.sendMessage(this.emailDomainNotAllowed);
+            return;
+          }
+        } else {
+          boolean blocked = Settings.IMP.MAIN.BLOCKED_EMAIL_DOMAINS.stream()
+              .anyMatch(blockedDomain -> domain.equalsIgnoreCase(blockedDomain));
+          if (blocked) {
+            source.sendMessage(this.emailDomainBlocked);
+            return;
+          }
         }
 
         String lowercaseNickname = nickname.toLowerCase(Locale.ROOT);

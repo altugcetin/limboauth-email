@@ -87,6 +87,8 @@ public class AuthSessionHandler implements LimboSessionHandler {
   private static Component registerPasswordTooShort;
   private static Component registerPasswordUnsafe;
   private static Component registerEmailInvalid;
+  private static Component registerEmailDomainBlocked;
+  private static Component registerEmailDomainNotAllowed;
   private static Component loginSuccessful;
   private static Component sessionExpired;
   @Nullable
@@ -388,12 +390,34 @@ public class AuthSessionHandler implements LimboSessionHandler {
   }
 
   private boolean checkEmailFormat(String email) {
-    if (emailPattern.matcher(email).matches()) {
-      return true;
-    } else {
+    // Check email format
+    if (!emailPattern.matcher(email).matches()) {
       this.proxyPlayer.sendMessage(registerEmailInvalid);
       return false;
     }
+
+    // Extract domain from email
+    String domain = email.substring(email.indexOf('@') + 1).toLowerCase();
+
+    // Check if whitelist mode is enabled
+    if (!Settings.IMP.MAIN.ALLOWED_EMAIL_DOMAINS.isEmpty()) {
+      boolean allowed = Settings.IMP.MAIN.ALLOWED_EMAIL_DOMAINS.stream()
+          .anyMatch(allowedDomain -> domain.equalsIgnoreCase(allowedDomain));
+      if (!allowed) {
+        this.proxyPlayer.sendMessage(registerEmailDomainNotAllowed);
+        return false;
+      }
+    } else {
+      // Check against blocked domains (blacklist mode)
+      boolean blocked = Settings.IMP.MAIN.BLOCKED_EMAIL_DOMAINS.stream()
+          .anyMatch(blockedDomain -> domain.equalsIgnoreCase(blockedDomain));
+      if (blocked) {
+        this.proxyPlayer.sendMessage(registerEmailDomainBlocked);
+        return false;
+      }
+    }
+
+    return true;
   }
 
   private boolean checkPasswordLength(String password) {
@@ -522,6 +546,8 @@ public class AuthSessionHandler implements LimboSessionHandler {
     registerPasswordTooShort = serializer.deserialize(Settings.IMP.MAIN.STRINGS.REGISTER_PASSWORD_TOO_SHORT);
     registerPasswordUnsafe = serializer.deserialize(Settings.IMP.MAIN.STRINGS.REGISTER_PASSWORD_UNSAFE);
     registerEmailInvalid = serializer.deserialize(Settings.IMP.MAIN.STRINGS.REGISTER_EMAIL_INVALID);
+    registerEmailDomainBlocked = serializer.deserialize(Settings.IMP.MAIN.STRINGS.REGISTER_EMAIL_DOMAIN_BLOCKED);
+    registerEmailDomainNotAllowed = serializer.deserialize(Settings.IMP.MAIN.STRINGS.REGISTER_EMAIL_DOMAIN_NOT_ALLOWED);
     emailPattern = Pattern.compile(Settings.IMP.MAIN.EMAIL_REGEX);
     loginSuccessful = serializer.deserialize(Settings.IMP.MAIN.STRINGS.LOGIN_SUCCESSFUL);
     sessionExpired = serializer.deserialize(Settings.IMP.MAIN.STRINGS.MOD_SESSION_EXPIRED);
