@@ -4,6 +4,8 @@ LimboAuth fork with mandatory email registration and advanced email filtering fo
 
 This is a fork of [LimboAuth](https://github.com/Elytrium/LimboAuth) by Elytrium.
 
+**Compatible with [LeaderOS](https://leaderos.net) server websites.**
+
 ## Features
 
 ### Email Registration
@@ -30,6 +32,7 @@ This is a fork of [LimboAuth](https://github.com/Elytrium/LimboAuth) by Elytrium
 - Velocity 3.4.0+ support
 - MySQL, PostgreSQL, H2, SQLite support
 - Full LimboAPI compatibility
+- LeaderOS website integration support
 
 ## Commands
 
